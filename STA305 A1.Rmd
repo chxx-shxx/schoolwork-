@@ -1,0 +1,171 @@
+---
+title: "STA305 A1"
+author: "Yunchae Seo"
+date: "27/01/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question A
+Randomly generate a sample of 16 data points to form the observations under two experimental designs: A completely randomized design and a randomized paired design, to compare two treatments - S and T. Carry out the following steps: 
+1) Set seed of randomization. 
+```{r}
+set.seed(5643) #last 4 digits of the student number is used
+```
+2) Random generation of 8 observations for treatment S
+```{r}
+s <- rnorm(n=8,mean=5,sd=2)
+round(s,3)
+```
+3) Random generation of 8 observations for treatment T 
+```{r}
+t <-rnorm(n=8,mean=7,sd=2)
+round(t,3)
+```
+4) Create a data frame with pairs of treatment S and T. 
+```{r}
+diff <- s - t #difference of the two treatment groups
+paired <- data.frame(s,t, diff) 
+round(paired,3)
+```
+
+## Question B 
+For both designs, based on the data simulated in part A, conduct a randomization test to compare the means of the two treatments. 
+
+For the completely randomized design, 
+
+(i) Describe the randomization distribution for this comparison. How many values does this distribution contain? What is the probability of the observed treatment allocation? 
+
+The randomization distribution pf completely randomized design is a Binomial distribution where n is large, the distribution approaches Normal distribution. 
+The empirical cumulative distribution function of this comparison is 
+$$\hat{F}(y) = \frac{\# (\delta_{i} \leq y)}{N}$$
+where 
+ - $\delta_{i}$ is the mean difference of the $i$th assignment.
+ - $N$ the number of total assignments.
+
+This is also equivalent to the probability distribution of experimental results when $H_0$ is true. 
+The number of values contained in this distribution equals to $N={16\choose8}=12870$. The probability of the observed treatment allocation is $\frac{1}{N} = 7.77 \times 10^5$
+
+(ii) Create a histogram of this randomization: include vertical line(s) to mark the area(s) corresponding to the P-value. Use the randomization test to determine if there is evidence of a difference in means between the two treatments. Explain your asnwer, including the P-value of your test and how you define 'signigicant' results.
+
+```{r}
+treat <- c(s,t); N<- choose(16,8) #Generate N treatment assignments
+result <- numeric(N)
+index <- combn(1:16,8)
+for (i in 1:N)
+{result[i] <- mean(treat[index[,i]])- mean(treat[-index[,i]])}
+meandiff <- mean(diff)
+#histogram 
+hist(result,xlab="Mean Difference", main= "Randomization Distribution of difference in means")
+abline(v= meandiff, col="blue")
+abline(v= -meandiff, col="blue")
+#p-value 
+pval <- sum(result < meandiff)/N
+round(pval,3)
+```
+There is no evidence of statistically significant difference in means between the two treatments given the p-value is 0.184. Since the common practice of significance value is 0.05, and the p-value = 0.184 < 0.05, we fail to reject the null hypothesis of $\mu_s = \mu_t$
+
+
+For the randomized paired design, 
+(i) 
+The randomization distribution for randomized paired design is also Binomial distribution where n is large, the distribution approaches Normal distribution. The empirical cumulative distribution function is 
+$$\hat{F}(y) = \frac{\# (\delta_{i} \leq y)}{N}$$
+where
+ - $\delta_{i}$ is the mean difference of the $i$th assignment.
+ - $N$ the number of total assignments.
+
+The number of values contained in this distribution equals to $N = 2^8 = 256$ and the probability of observing the treatment allocation is $\frac{1}{N} = \frac{1}{256} = 0.391 \times 10^{-3}$
+
+```{r}
+treat <- c(s,t)
+N<- 2^(8) # number of treatment assignments
+result <- numeric(N)
+ST <- list(c(-1,1)) #difference is multiplied by -1 or 1 
+#genegerate all possible treatment assign 
+trtassign <- expand.grid(rep(ST,8))
+for (i in 1:N){
+  result[i] <- mean(as.numeric(trtassign[i,])*diff)
+}
+meandiff <- mean(diff)
+pval <- sum(result < meandiff)/N
+round(pval, 3)
+hist(result,xlab="Mean Difference", main= "Randomization Distribution of Treatment S and T")
+abline(v= meandiff, col="blue")
+abline(v= -meandiff, col="blue")
+```
+(ii)
+There is no evidence of statistically significant difference in means between the two treatments given the p-value is 0.156. Since the common practice of significance value is 0.05, and the p-value = 0.156 < 0.05, we fail to reject the null hypothesis of $\mu_s = \mu_t$
+
+
+## Question C 
+For both designs, based on the data simulated in part A, conduct an appropriate t-test to compare the means of the two treatments. Note: Assume that the population distribution are Normal but the parameters are unknown. 
+
+For the completely randomized design, two sample t-test is performed. 
+```{r}
+t.test(s,t, alternative="two.sided")
+qqnorm(s, main="Treatment S")
+qqline(s)
+qqnorm(t, main="Treatment T")
+qqline(t)
+```
+(i) Explain your answer, including the P-value of your test.
+
+Given our hypotheses are stated as below, 
+$H_0: \mu_s = \mu_T$
+$H_A: \mu_s \neq \mu_T$
+the p-value of 0.375 indicate that we fail to reject the null hypothesis and therefore the true difference in means of two treatment groups is not equal to 0. 
+
+(ii) Are the assumptions behind the t-test satisfied?
+
+The assumptions of the t-test are stated below, 
+a. Equal Variance 
+b. Independent Observations 
+c. Approximately Normal Distribution. 
+
+The assumption on the equal variance is satisfied because the random generation of the data sets were from the $N(5,2^2)$ for treatment S and $N(7,2^2)$ for treatment T. The observations are also independent since it was randomly generated. Lastly, by examining the q-q plot, both treatment S and T follow approximately normal, therefore the last assumption is also satisfied. 
+
+(iii) Do the results of the t-test agree with the results of the randomization test? Explain. 
+
+Yes, the two sample t-test result corresponds with the randomization test as the both of the p-values 0.375 and 0.184, do not fall under 0.05 significance level. Since both of them fail to reject the null hypothesis at the significance level of 0.05, they indicate there is no significant difference in means of two treatment groups S and T. 
+
+
+For the paired randomized deign, 
+```{r}
+#perform one sample t-test
+t.test(s,t, paired=TRUE, alternative="two.sided")
+qqnorm(s, main="Treatment S")
+qqline(s)
+qqnorm(t, main="Treatment T")
+qqline(t)
+t.test(diff,alternative="less")
+qqnorm(diff, main="Observed Difference");qqline(diff)
+```
+(i)
+Given our hypotheses are stated as below, 
+$H_0: D = 0$, D = difference between the two treatment means 
+$H_A: D \neq 0$
+the p-value of 0.301 indicate that we fail to reject the null hypothesis and therefore the true difference in means of two treatment groups is not equal to 0. 
+
+(ii)
+The assumptions of the t-test are stated below, 
+
+a. Independent Observations 
+b. Approximately Normal Distribution. 
+
+The observations are independent since the data was randomly generated. By examining the q-q plot, both treatment S and T follow approximately normal, therefore the last assumption is also satisfied.
+
+(iii)
+Yes, the two sample t-test result corresponds with the randomization test as the both of the p-values 0.156 and 0.301, do not fall under 0.05 significance level. Since both of them fail to reject the null hypothesis at the significance level of 0.05, they indicate there is no significant difference in means of two treatment groups S and T. 
+
+
+To wrap up,  the comparison of two types of randomization test is listed below.  
+
+
+| Test Type          | Completely Randomized Design | Paired Randomized Design |
+|:------------------:|:----------------------------:|:------------------------:|
+| Randomization Test | $0.184$                      | $0.156$                  |
+| T-Test             | $0.375$                      | $0.301$                  |
+
