@@ -1,0 +1,141 @@
+---
+title: "STA410 A2"
+author: "Yunchae Seo"
+date: "09/10/2019"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1a 
+Define the following transformation: 
+\textbf{Answer:} 
+$$
+\begin{aligned}
+\ Y = u \\
+\ X = \frac{v}{u}\\
+\ U = Y \\
+\ V = XY \\
+\ f_{u,v}(y,x) = \frac{1}{|C_h|}, (u,v) \in C_h \\
+\ C_h = \{(u,v) = 0 \leq u \leq \sqrt{h(\frac{v}{u})}\} \\
+\ g(u,x) = g(y,x) \\ 
+&= \ f_{u,v}(y,x)|J| \\ 
+&= \frac{1}{|C_h|}Y \\
+&= \frac{u}{|C_h|}, (u,x) \in \{(u,x): 0 \leq u \leq \sqrt{h(x)} \}
+\end{aligned}
+$$
+
+## Question 1b 
+\textbf{Answer:} 
+$$
+\begin{aligned}
+\ (u,v) \in C_h \\
+\ \sqrt{h(x)} \leq  \max_{x}\sqrt{h(x)} \\
+\ 0 \leq u \leq u_{+} \Rightarrow 0 \leq u \leq \max_{x}\sqrt{h(x)} \\
+\ u = \frac{v}{x}, 0 \leq u = \frac{v}{x} < h(x) \\
+\ x >0, v \geq 0 \\
+\ v \leq x\sqrt{h(x)} \leq \max_{x}x\sqrt{h(x)} \\
+\ v \leq v_{+} = \max_{x}x\sqrt{h(x)} \\
+\ v \geq \sqrt{h(x)} \geq \min_{x}x\sqrt{h(x)} \\
+\ (u,v) \in D_h \\
+\end{aligned}
+$$
+
+
+## Question 1c
+```{r}
+# rejection sampling function 
+rej_sampling <- function(n){
+  u<- NULL 
+  v<- NULL 
+  rejections <- 0 
+  u_pos <- 1 #defining u and v 
+  v_neg <- -sqrt(2/exp(1)) 
+  v_pos <- sqrt(2/exp(1))
+  for (i in 1:n) {
+    reject <- T 
+    while(reject) {
+      u_star <- runif(1,min= 0,max= u_pos) 
+      v_star <- runif(1, min= v_neg, max= v_pos)
+      if (u_star <= exp((-v_star^2)/(4*u_star^2))){
+        u <-c(u, u_star)
+        v <-c(v, v_star)
+        reject <- F 
+      }
+      else rejections <- rejections +1 
+    }
+  }
+    x <- v/u 
+    #calculate acceptance rate 
+    accept.rate <- n/(n+rejections) 
+    rate <- list(x=x, accept.rate = accept.rate)
+    rate
+}
+rate <- rej_sampling(10000) #generate 10000 rejection rvs using the function 
+str(rate)
+```
+
+## Question 2a
+\textbf{Answer:} 
+$$
+\begin{aligned}
+\ Y_i = a_i + b , f(\theta) = \sum_{i+1}^n(y_i -\theta_i)^2 +  
+\lambda\sum_{i=2}^{n-1}(\theta_{i+1}-2\theta_i+ \theta_{i-1})^2 \\
+ \hat{\theta}_i  = a \times i + b 
+\ \theta_1= a + b \\
+\ \theta_2  = 2a +b \\
+\ \theta_n = na + b \\
+\ \frac{\partial f}{\partial \theta_1} = -2(y_i - \theta_1) + 2\lambda(\theta_3-2\theta_2 + \theta_1)= 0 \\
+\ \Rightarrow-2(y_1 -\theta_1) = 0 \\
+\ y_1 - \theta_1 = 0 \\
+\ y_1 - \theta_1 = a + b \\
+\ \frac{\partial f}{\partial \theta_2} = -2(y_2 - \theta_2) + 
+\lambda[2(\theta_3-2\theta_2 + \theta_1)(-2) + 2(\theta_4 - 2\theta_3 + \theta_2)] = 0 \\
+\ \Rightarrow-2(y_2 - \theta_2) = 0 \\
+\ y_2 = \theta_2 = 2a +b \\
+\ \frac{\partial f}{\partial \theta_i} = -2(y_i - \theta_i) = 0 \\
+\ y_i = \theta_i = a \times i + b \\
+\ \hat{\theta_i} = y_i \\
+
+\end{aligned}
+$$
+## Question 2b 
+
+## Question 2c
+## Question 2d 
+```{r}
+HP <- function(x,lambda,p=20,niter=1000) {
+        n <- length(x)
+        a <- c(1,-2,1)
+        aa <- c(a,rep(0,n-2))
+        aaa <- c(rep(aa,n-3),a)
+        mat <- matrix(aaa,ncol=n,byrow=T)
+        mat <- rbind(diag(rep(1,n)),sqrt(lambda)*mat)
+        xhat <- x
+        x <- c(x,rep(0,n-2))
+        sumofsquares <- NULL
+        for (i in 1:niter) {
+           w <- sort(sample(c(1:n),size=p))
+           xx <- mat[,w]
+           y <- x - mat[,-w]%*%xhat[-w]
+           r <- lsfit(xx,y,intercept=F)
+           xhat[w] <- r$coef
+           sumofsquares <- c(sumofsquares,sum(r$residuals^2))
+           }
+        r <- list(xhat=xhat,ss=sumofsquares)
+        r
+}
+yield <- read.table("~/STA410/yield.txt", quote="\"", comment.char="")
+x <- as.matrix(yield)
+r1 <- HP(x=x,lambda=2000,p=5,niter=1000)
+r2 <- HP(x=x,lambda=2000,p=15,niter=1000)
+r3 <- HP(x=x,lambda=2000,p=30,niter=1000)
+r4 <- HP(x=x,lambda=2000,p=50,niter=1000)
+par(mfrow=c(2,2))
+hist(r1$ss) ;hist(r2$ss) ; hist(r3$ss) ;hist(r4$ss)
+```
+
