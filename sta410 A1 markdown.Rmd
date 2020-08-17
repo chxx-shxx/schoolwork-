@@ -1,0 +1,208 @@
+---
+title: "STA410 A1 Rm"
+author: "Yunchae Seo"
+date: "29/09/2019"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1a
+\textbf{Answer:} 
+$$ 
+\begin{aligned}
+\ \hat{Z} 
+&= A_mZA_n^T\\
+\ \hat{Z}A_n 
+&= A_mZD_n\\
+\ \hat{Z}A_nD_n^{-1}
+&= A_mZ\\
+\ A_m^T\hat{Z}A_nD_n^{-1}
+&= ZD_m\\
+\ D_m^{-1}A_m^T\hat{Z}A_nD_n^{-1}
+&= Z\\
+\end{aligned}
+$$
+
+## Question 1b 
+```{r}
+setwd("C:/Users/gourm/Desktop/YEAR 4/STA410")
+library(dtt)
+denoise_hard <- function(dctmat,lambda) {
+  # if lambda is missing, set it to the 0.8 quantile of abs(dctmat)
+  if(missing(lambda)) lambda <- quantile(abs(dct),0.8)
+  # hard-thresholding
+  a <- dctmat[1,1]
+  dctmat1 <- ifelse(abs(dctmat)>lambda,dctmat,0)
+  dctmat1[1,1] <- a
+  # inverse DCT to obtain denoised image "clean"
+  clean <- mvdct(dctmat1,inverted=T)
+  clean <- ifelse(clean<0,0,clean)
+  clean <- ifelse(clean>1,1,clean)
+  clean
+}
+denoise_soft <- function(dctmat, lambda) {
+  # if lambda is missing, set it to the 0.8 quantile of abs(dctmat)
+  if(missing(lambda)) lambda <- quantile(abs(dct),0.8)
+  # soft-thresholding
+  b <- dctmat[1,1]
+  dctmat2 <- sign(dctmat)*(abs(dctmat)-abs(lambda))
+  dctmat2[1,1] <- b
+  # inverse DCT to obtain denoised image "clean"
+  clean <- mvdct(dctmat2,inverted=T)
+  clean <- ifelse(clean<0,0,clean)
+  clean <- ifelse(clean>1,1,clean)
+  clean 
+}
+```
+
+## Question 1c
+```{r}
+boats <- matrix(scan("boats.txt"),ncol=256, byrow=T)
+#original image 
+image(boats, axes=F, col=grey(seq(0,1,length=256)))
+#compute dct 
+dctmat<- mvdct(boats)
+#hard thresholding with parameter 100
+h1<- denoise_hard(dctmat, 100)
+image(h1, axes=F, col=grey(seq(0,1,length=256)))
+#hard thresholding with parameter 10
+h2<- denoise_hard(dctmat, 10)
+image(h2, axes=F, col=grey(seq(0,1,length=256)))
+#soft thresholding with parameter 100
+s1<- denoise_soft(dctmat,100)
+image(s1, axes=F, col=grey(seq(0,1,length=256)))
+#soft thresholding with parameter 10
+s2<- denoise_soft(dctmat,10)
+image(s2, axes=F, col=grey(seq(0,1,length=256)))
+```
+## Question 2a
+We want to show the proability generating function of X. Here, we begin with the definition. 
+ 
+\textbf{Answer:} 
+$$ 
+\begin{aligned}
+\ g(s) 
+&= E(s^X) \\
+&= E(s^{U+2V}) \\
+&= E(s^U)E(s^{2V})\\
+\end{aligned}
+$$
+Suppose U and V are independent random variables, and they follow Hermite distribution, then the probability generating function is a product of two pgf functions of U and V. While the pgf of U is relaitvely straight forward, we need to find the pgf of 2V first.
+\textbf{Answer:} 
+$$ 
+\begin{aligned}
+\ g_{aX+b}(s) 
+&= E[s^{aX+b}] \\
+&= \sum_{x\in X}p(x)s^{ax+b} \\
+&= \sum_{x\in X}p(x)(s^a)^xs^b \\
+&= s^bg_X(s^a)\\
+\end{aligned}
+$$
+Using the general form of probability generating function, we now know the pgf of 2V. We then substitute each pgf and multiply together. 
+\textbf{Answer:} 
+$$
+\begin{aligned}
+&= e^{\lambda_u(s-1)}e^{-\lambda_v(1-s^2)}\\
+&= e^{[\lambda_u(s-1) + \lambda_v(s^2-1)]}
+\end{aligned}
+$$ 
+and this is what we wanted to show. 
+
+## Question 2b 
+We want to choose M such that 
+\textbf{Answer:} 
+$$ 
+\begin{aligned}
+\ P(X \geq M) \leq \frac{\exp[\lambda_u(s-1)+\lambda_v(s^2-1)]}{s^m} = \epsilon \\ 
+\end{aligned}
+$$
+
+By taking ln on each side, we get 
+\textbf{Answer:} 
+$$ 
+\begin{aligned}
+\ \lambda_u(s-1)+\lambda_v(s^2-1)-M\ln(s) =\ln(\epsilon) \\
+\end{aligned}
+$$ 
+then we isolate M and divide both sides by ln(s)
+\textbf{Answer:} 
+$$ 
+\begin{aligned}
+\ M\ln(s) = \lambda_u(s-1)+\lambda_v(s^2-1)-\ln(\epsilon) \\
+\ M = \frac{\lambda_u(s-1)+\lambda_v(s^2-1)-\ln(\epsilon)}{\ln(s)}
+\end{aligned}
+$$
+Here, we say that bound M is an infimum. 
+
+## Question 2c
+Given M, we write a function to compute pgf and probability of X using Fast Fourier Transform function in R. 
+
+```{r}
+#first case 
+s <-c(1001:2000)/1000
+lambda_u <- 1 
+lambda_v <- 5 
+epsilon <- 10E-5
+
+#evaluating PGF 
+g <- function(s){
+  exp(lambda_u*(s-1) + lambda_v*(s^2-1))
+}
+
+#evaluating M 
+Mvalue<- function(s) {
+  (lambda_u*(s-1) + lambda_v*(s^2-1)-log(epsilon))/log(s)
+}
+M <-min(Mvalue(s))
+s <- exp(-2*pi*1i*c(0:(M-1))/M)
+
+#evaluate probability of X by computing the inverse FFT of the sequence of first case 
+
+x1 = c(1:M-1)
+gs <- g(s)
+Px <- Re(fft(gs, inv=T)/M)
+
+#Plot the distribution of X of first case 
+plot(x1, Px, main="Probability Distribution of Y", xlab="y", ylab="P(Y=y)", type = "h", lwd =5) 
+
+```
+Now we evaluate the distribution of X using the different parameters. 
+```{r}
+#second case 
+s <-c(1001:2000)/1000
+lambda_u <- 0.1 
+lambda_v <- 2
+epsilon <- 10E-5
+
+#evaluating PGF 
+g <- function(s){
+  exp(lambda_u*(s-1) + lambda_v*(s^2-1))
+}
+
+#evaluating M 
+Mvalue<- function(s) {
+  (lambda_u*(s-1) + lambda_v*(s^2-1)-log(epsilon))/log(s)
+}
+M <-min(Mvalue(s))
+s <- exp(-2*pi*1i*c(0:(M-1))/M)
+
+#evaluate probability of X by computing the inverse FFT of the sequence of first case 
+
+x2 = c(1:M-1)
+gs <- g(s)
+Px <- Re(fft(gs, inv=T)/M)
+
+#Plot the distribution of X of first case 
+plot(x2, Px, main="Probability Distribution of Y", xlab="y", ylab="P(Y=y)", type = "h", lwd =5) 
+
+```
+
+
