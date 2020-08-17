@@ -1,0 +1,289 @@
+---
+title: "STA410 Assignment3"
+author: "Yunchae Seo"
+date: "29/10/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1a 
+We want to minimize 
+by taking Vi to be +/- with probability 1/2 
+first take a look at 
+when all the indices i=j=k=l, 
+since Vi's are iid with mean 0 and variance 1 
+Thus, 
+Now we want to minimize 
+\textbf{Answer:} 
+$$
+\begin{aligned}
+\ E((V_i^2))^2 \\ 
+\ Var(\hat{tr}(A)) \\
+\ \hat{tr(A)} = \frac{1}{m} \sum_{i=1}^mV_i^TAV_i \\
+\ Var(V^TAV) = E[(V^TAV)^2] - tr(A)^2 \\
+\ E[(V^TAV)^2] = \sum_{i=1}^n\sum_{j=1}^n\sum_{k=1}^n\sum_{l=1}^na_{ij}a_{kl}E(V_iV_jV_kV_l) \\
+\ E[V_iV_jV_kV_l] = 1 \\
+\ E[V_iV_jV_kV_l] = E[V_i]E[V_jV_kV_l] = 0 \\
+\ E[V^TAV] = \sum_{i=1}^n\sum_{j=1}^n\sum_{k=1}^n\sum_{l=1}^na_{ij}a_{kl}E(V_iV_jV_kV_l) \\
+=& \sum_{i=1}^na_{ii}E(V_i^4) + \sum_{k=1}^na_{ii}a_{kk} + \sum_{i=1}\sum_{j=1}a_{ij}^2 + \sum_{i=1}\sum_{j=1}a_{ij}a_{ji}\\
+&= \sum_{i=1}^na_{ii}^2E(V_i^4) + constant \\
+\ Var(V_i^2) \geq 0 \\
+\ Var(V_i^2) \leq 0 \\
+\ E(V_i) = \frac{1}{2}(1) + \frac{1}{2}(-1) = 0 \\
+\ E(V_i^2) = \frac{1}{2}(1)^2 + \frac{1}{2}(-1)^2 = 1 \\
+\ Var(V_i) = E(V_i^2) - E(V_i)^2 = 1-0 = 1 \\
+\ V_i = -1, V_i^2 = 1 \\
+\ V_i = 1, V_i^2 = 1 \\
+\ V_i^2 = 1 \\
+\ Var(V_i) = 0 \\
+\ Var(\hat{tr}(A)) 
+\end{aligned}
+$$
+## Question 1b 
+\textbf{Answer:} 
+$$
+\begin{aligned}
+\ H = X(X^TX)^{-1}X^T = 
+\begin{pmatrix}
+H_{11} & H_{12} \\
+H_{21} & H_{22} 
+\end{pmatrix}
+\quad \\
+\ H\begin{pmatrix} 
+V \\
+0
+\end{pmatrix} = \begin{pmatrix}
+H_{11} & H_{12} \\
+H_{21} & H_{22} 
+\end{pmatrix}\begin{pmatrix}
+V \\
+0
+\end{pmatrix} = \begin{pmatrix}
+H_{11}V + H_{12} *0 \\
+H_{21}V + H_{22}*0
+\end{pmatrix} = \begin{pmatrix}
+H_{11}V \\
+H_{21}V
+\end{pmatrix}
+\quad \\ 
+\ H\begin{pmatrix}
+H_{11}^{k-1}\\
+0 
+\end{pmatrix} = \begin{pmatrix}
+H_{11} & H_{12} \\
+H_{21} & H_{22} 
+\end{pmatrix}\begin{pmatrix} 
+H_{11}^{k-1}V \\
+0 
+\end{pmatrix} = \begin{pmatrix}
+H_{11}H_{11}^{k-1}V + H_{12} *0 \\
+H_{21}H_{11}^{k-1}V + H_{22}*0
+\end{pmatrix} = \begin{pmatrix} 
+H_{11}^{k}V \\
+H_{21}H_{11}^{k-1}V
+\end{pmatrix}
+\end{aligned}
+$$
+## Question 1c
+```{r}
+x <- c(1:1000)/1000
+X1 <- 1 
+for (k in 1:5) X1 <- cbind(X1, cos(2*k*pi*x),sin(2*k*pi*x))
+library(splines) #loads the library of functions to compute B-splines 
+X2 <- cbind(1,bs(x, df=10))
+plot(x, X2[,2])
+for (i in 3:11) points(x, X2[,i])
+#leverage function 
+leverage <- function(x,w,r=10,m=100) {
+               qrx <- qr(x)
+               n <- nrow(x)
+               lev <- NULL
+               for (i in 1:m) {
+                   v <- ifelse(runif(n)>0.5,1,-1)
+                   v[-w] <- 0
+                   v0 <- qr.fitted(qrx,v)
+                   f <- v0
+                   for (j in 2:r) {
+                      v0[-w] <- 0
+                      v0 <- qr.fitted(qrx,v0)
+                      f <- f + v0/j
+                      }
+                   lev <- c(lev,sum(v*f))
+                   }
+                std.err <- exp(-mean(lev))*sd(lev)/sqrt(m)
+                lev <- 1 - exp(-mean(lev))
+                r <- list(lev=lev,std.err=std.err)
+                r
+}
+#estimating leverage points 
+w_list = list(rep(0, 20))
+for (k in 1:20) {
+  # print(k)
+  lower_bound = (k - 1) / 20
+  upper_bound = k / 20
+  w <- x[lower_bound < x & x <= upper_bound]
+  # print(w)
+  w_list[[k]] = w
+}
+
+length(w_list[[20]])
+leverage(X1, w_list[[20]])
+
+# leverage points for X1
+for (i in 1:20) {
+  print(leverage(X1, w_list[[i]]))
+}
+
+# leverage points for X2
+for (i in 1:20) {
+ print(leverage(X2, w_list[[i]]))
+}
+```
+```{r}
+leverage(X2, w_list[[19]])
+```
+
+
+## Question 2a 
+\textbf{Answer:} 
+$$
+\begin{aligned}
+\bar{x} = \frac{1}{n} \sum_{i=1}^{n} x_i = \frac{\alpha}{\lambda}\\
+\sigma^2 = \frac{1}{n} \sum_{i=1}^{n} (x_i - \bar{x})^2 = \frac{\alpha}{\lambda^2}\\
+\hat{\lambda} = \frac{\bar{x}}{\sigma^2} = \frac{\sum_{i=1}^{n} x_i}{\sum_{i=1}^{n} (x_i - \bar{x})^2}\\
+\hat{\alpha} = \hat{\lambda} x = \frac{\bar{x}^2}{\sigma^2} = \frac{n \bar{x}^2}{\sum_{i=1}^{n} (x_i - \bar{x})^2}
+\end{aligned}
+$$
+
+## Question 2b 
+MLE: 
+\textbf{Answer:} 
+$$
+\begin{aligned}ln(L(\alpha,\lambda)) = ln({\prod_{i=1}^nf(x_i;\alpha,\lambda))} \\
+&= \sum_{i=1}^nln(\frac{\lambda^{\alpha}x_i^{\alpha-1}exp(-\lambda x_i)}{\Gamma(\alpha)})\\
+
+&= \sum_{i=1}^n[\alpha ln(\lambda) + (\alpha -1 )ln(x_i)-ln(\Gamma(\alpha))] \\
+&= n\alpha ln(\lambda) - nln(\Gamma(\alpha)) + (\alpha -1)\sum_{i=1}^nln(x_i)-\lambda\sum_{i=1}^nx_i \\
+\end{aligned} 
+$$
+
+Score: 
+\textbf{Answer:}
+$$
+\begin{aligned}
+\ \frac{\partial ln(L)}{\partial \alpha} = nln(\lambda) - \frac{n\Gamma(\alpha)^\prime}{\Gamma(\alpha)} + \sum_{i=1}^nln(x_i) \\
+\ \frac{\partial ln(L)}{\partial \alpha} = \frac{n\alpha}{\lambda} - \sum_{i=1}^nx_i \\
+\ S(\alpha, \lambda) =
+\begin{bmatrix}
+nln(\lambda)-\frac{n\Gamma(\alpha)^\prime}{\Gamma{(\alpha}} + \sum_{i=1}^nln(x_i) \\
+\frac{n\alpha}{\lambda}-\sum_{i=1}^nx_i \\
+\end{bmatrix}
+\end{aligned}
+$$
+Hessian: 
+\textbf{Answer:}
+$$
+\begin{aligned}
+\frac{\partial^2ln(L)}{\partial \alpha^2} = -n\frac{\Gamma{(\alpha)^{\prime\prime}}- (\Gamma(\alpha)^\prime)^2}{(\Gamma(\alpha))^2} \\
+\ \frac{\partial^2ln(L)}{\partial \alpha \theta \lambda}= \frac{\partial^2ln(L)}{\partial \lambda \theta \alpha} = \frac{n}{\lambda} \\
+\ \frac{\partial^2ln(L)}{\partial \lambda^2} = -\frac{n\alpha}{\lambda^2} \\
+\ H(\alpha, \lambda) = 
+\begin{bmatrix}
+n\frac{\Gamma(\alpha)^{\prime\prime}\Gamma(\alpha)-(\Gamma(\alpha)^\prime)^2}{(\Gamma(\alpha))^2} &&-\frac{n}{\lambda} \\
+-\frac{n}{\lambda} && \frac{n\alpha}{\lambda^2}
+\end{bmatrix}
+\end{aligned}
+$$
+
+```{r}
+gamma.mle <- function(x,alpha,lambda,eps=1.e-8,max.iter=100) {
+  n <- length(x)
+  
+  # use MoM to estimate alpha and lambda if missing
+  if (missing(alpha)) {
+    lambda <- mean(x)/var(x)
+    alpha <- mean(x)^2/var(x)
+  }
+  theta <- c(alpha,lambda)
+  # compute the scores based on the initial estimates
+  score1 <- n*log(lambda) - n*digamma(alpha)/gamma(alpha) + sum(log(x))
+  score2 <- n*alpha/lambda - sum(x)
+  score <- c(score1,score2)
+  iter <- 1
+  while (max(abs(score))>eps && iter<=max.iter) {
+    rate <- 1
+    # compute observed Fisher information
+    info.11 <- n*(trigamma(alpha)*gamma(alpha) - digamma(alpha)^2)/gamma(alpha)^2
+    info.12 <- -n/lambda
+    info.22 <- n*alpha/lambda^2
+    info <- matrix(c(info.11,info.12,info.12,info.22),ncol=2)
+    # Newton-Raphson iteration
+    theta <- theta + rate*solve(info,score)
+    # Record the alpha and lambda from previous iteration for recalculation if needed
+    previous_alpha <- alpha
+    previous_lambda <- lambda
+    # use a smaller update rate until both parameters are positive
+    while (theta[1]<=0 || theta[2]<=0) {
+      rate <- 0.7*rate
+      info.11 <- n*(trigamma(previous_alpha)*gamma(previous_alpha)
+                    - digamma(previous_alpha)^2)/gamma(previous_alpha)^2
+      info.12 <- -n/previous_lambda
+      7
+      info.22 <- n*previous_alpha/previous_lambda^2
+      info <- matrix(c(info.11,info.12,info.12,info.22),ncol=2)
+      theta <- theta + rate*solve(info,score)
+    }
+    alpha <- theta[1]
+    lambda <- theta[2]
+    iter <- iter + 1
+    # update score
+    score1 <- n*log(lambda) - n*digamma(alpha)/gamma(alpha) + sum(log(x))
+    score2 <- n*alpha/lambda - sum(x)
+    score <- c(score1,score2)
+  }
+  if (max(abs(score))>eps) print("No convergence")
+  else {
+    print(paste("Number of iterations =",iter-1))
+    loglik <- n*alpha*log(lambda) - n*log(gamma(alpha))
+    + (alpha-1)*sum(log(x)) - lambda*sum(x)
+    info.11 <- n*(trigamma(alpha)*gamma(alpha) - digamma(alpha)^2)/gamma(alpha)^2
+    info.12 <- -n/lambda
+    info.22 <- n*alpha/lambda^2
+    info <- matrix(c(info.11,info.12,info.12,info.22),ncol=2)
+    r <- list(alpha=alpha,lambda=lambda,loglik=loglik,info=info)
+    r
+  }
+}
+
+```
+Now estimateing leverage 
+```{r}
+#Test on generated data on gamma distribution with alpha = 1, 2, 1.5 and lambda = 1 
+
+x1 <-rgamma(1000, 1)
+r1 <- gamma.mle(x1)
+r1
+
+```
+alpha and lambda:
+```{r}
+x2 <- rgamma(1000, 1.5)
+r2 <- gamma.mle(x2)
+r2
+
+```
+last alpha and lambda 
+```{r}
+x3 <- rgamma(1000, 2)
+r3 <- gamma.mle(x3)
+r3
+```
+
+for variance covariance matrix, 
+```{r}
+par(mfrow=c(1,3))
+solve(r1$info);solve(r2$info);solve(r3$info)
+```
