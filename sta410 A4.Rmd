@@ -1,0 +1,135 @@
+---
+title: "STA410 Assignment 4"
+author: "Yunchae Seo"
+date: "17/11/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Question 1a 
+\textbf{Answer:}
+$$
+\begin{aligned}
+\ Y_i = \theta_i + \varepsilon_i (i=1,...,n) \\
+\ {\varepsilon_i}, \theta_1, ..., \theta_n \\
+\ {|\theta_i-\theta_{i-1}|}, \sum_i(\theta_i -2\theta_{i-1}+\theta_{i-2})^2 \\
+\ \sum_{i=1}^n(y_i-\theta_i)^2 + \lambda\sum_{i=2}^n|\theta_i-\theta_{i-1}|\\
+\ \lambda > 0, \sum_{i-2}^n|\theta_i-\theta_{i-1}| \\
+\ \theta_i = g(i/n), \phi_i = \theta_i-\theta _{i-1}, i=2,..,n \\
+\ \sum_{i=1}^n(y_i-\theta_i)^2 + \lambda\sum_{i=2}^n|\phi_i| \\
+\ \theta_k = \theta_1 + \sum_{i=2}^k\phi_i ,  k \geq 2 \\
+\ solution \\
+\ \phi_i = \theta_i - \theta_{i-1} \\
+\ \theta_2 = \theta_1 + \theta-2 -\theta_1 = \theta_1 + \phi_2 \\
+\ \theta_3 = \theta_2 + \theta_3 - \theta_2 = \theta_2 + \phi_3 = \theta_1 + \phi_2 + \phi_3 \\
+\ \theta_4 = \theta_3 + \theta_4 - \theta_3 + \phi_4 = \theta_1 + \phi_2 + \phi_3 + \phi_4 \\
+\ ... \\
+\ \theta_{k-1} = \theta_{k-2} + \theta_{k-1} - \theta_{k-2} = \theta_{k-2} + \phi_{k-1} = \theta_1 + \phi_2 + \phi_3 + ... + \phi_{k-1} \\
+\ \theta_k = \theta_{k-1} + \theta_k - \theta_{k-1} = \theta_{k-1} + \phi_k = \theta_1 + \phi_2 + \phi_3 + ... + \phi_{k-1} + \phi_k = \theta_1 + \sum_{i=2}^k\phi_i 
+\end{aligned}
+$$
+
+## Question 1b
+\textbf{Answer:}
+$$
+\begin{aligned}
+\ \frac{\partial f}{\partial \theta_1} = \frac{\partial}{\partial \theta_1}\sum_{i=1}^n(y_i - \theta_1 - \sum_{j=2}^i\phi_j)^2 + \lambda\sum_{i=2}^n|\phi_i|\\
+\ = -2\sum_{i=1}^n(y_i - \theta_i - \sum_{j=2}^i\phi_j) \\ 
+\ -2\sum_{i=1}^n(yi-\theta_1-\sum_{j=2}^i\phi_j) = 0 \\
+\ \Rightarrow \sum_{i=1}^n(y_i -\theta_1)-\sum_{j=2}^n\phi_i = 0 \\
+\ given,  \theta_i = \theta_1 + \sum_{j=2}^i\phi_j, for j \geq 2 \\
+\ then \sum_{i=1}^n (yi-(\theta_1 + \sum_{j=2}^i\phi)) \\
+\ \sum_{i=1}^n(y_i - \theta_i) = 0 \\
+\end{aligned}
+$$
+
+## Question 1c
+\textbf{Answer:}
+$$
+\begin{aligned}
+\ -2\lambda \leq -2(y_i-\hat{\theta}_1 \leq 2\lambda \\
+\ gd(\theta_1,\phi_1, ..., \phi_n) = (y_i-\theta_1)^2 + \sum_{i=2}^n[y_i-(\theta_1+\sum_{j=2}^i\phi_j)]^2 \\
+\ gnd(\theta_1,\phi_1,...,\phi_n) = \lambda\sum_{i=2}^n|\phi_i|\\
+\ \lambda[-1,1] = [-\lambda,\lambda], 2[-\lambda,\lambda] = [-2\lambda,2\lambda]^n \\
+\ set to 0 \Rightarrow 2\sum_{i=j}^n(y_i-\theta_i-\sum_{k=2,k \neq j}^i\phi_k) = \lambda\partial|\phi_j| \\
+\ -1 \leq \partial|\phi_j| \leq 1 , -\lambda \leq \lambda\partial|\phi_j| \leq \lambda \\
+\ \lambda|\theta_2-\theta-1|, f(\theta)=\lambda\sqrt{(\theta-2-\theta_1)^2} \\
+\ \lambda\sqrt{(u)^2} = \lambda((u)^2)^{1/2} \\
+\ f'(\theta) = (dy/du)(du/d\theta) = \frac{\lambda(\theta_2-\theta_1)}{|\theta_2-\theta_1|}  = \frac{\lambda(-x)}{x} or \frac{\lambda(x)}{x} \\
+\ \Rightarrow -\lambda, or, \lambda \\
+\end{aligned}
+$$
+
+## Question 1d
+\textbf{Answer:}
+$$
+\begin{aligned}
+\ {\phi_i: 2 \leq i \neq j \leq n} \\
+\ f = \sum_{i=1}^n (y_i-\theta_1-\sum_{k=2}^i\phi_k)^2 + \lambda\sum_{i=2}^n|\phi_i|\\
+\ \frac{\partial f}{\partial \phi_j}= \frac{\partial}{\partial \phi_j}\sum_{i=1}^n (y_i-\theta_1-\sum_{k=2}^i\phi_k)^2) = \lambda\sum_{i=2}^n|\phi_i| \\
+\ -2\sum_{i=1}^n (y_i-\theta_1-\sum_{k=2}^i\phi_k)^2 + \lambda\frac{\partial}{\partial\phi_j}|\phi_j|\\
+\ -2[\sum_{i=j}^n-\phi_j + \sum_{i=j}^n(y_i-\theta_1-\sum_{k=2, k \neq j } ^i \phi_k) + \lambda\partial|\phi_j|\\
+\ 2(n+j-1)\phi_j - 2\sum_{i=j}^n(y_i-\theta_1-\sum_{k=2, k \neq j } ^i \phi_k) + \lambda\partial|\phi_j|\\
+\ \hat{\theta}_1 = ... = \hat{\theta}_n = \bar{y}, \hat{\phi}_2 = ... = \hat{\phi}_n = 0 \\
+\ \phi_j = 0, \partial|\phi_j| = [-1,1] \\
+\ \phi_j = \frac{2\sum_{i=j}^n(y_i-\theta_1-\sum_{k=2,k \neq j}^i)+\lambda\partial|\phi_j|}{2(n+j-1)} \\
+\ \phi_j = \frac{2\sum_{i=j}^n(y_i-\theta_1-\sum_{k=2,k \neq j}^i)+\lambda\partial|\phi_j|}{2(n+j-1)} = 0 \\
+\ \Rightarrow  \sum_{i=j}^n(y_i-\theta_1-\sum_{k=2,k \neq j}^i\phi_k) \in \frac{\lambda[-1,1]}{2} \\
+\ \Rightarrow |\sum_{i=j}^n(y_i-\theta_1-\sum_{k=2,k \neq j}^i\phi_k)|\leq \frac{\lambda}{2} \\
+\end{aligned}
+$$
+
+## Question 2a
+\textbf{Answer:}
+$$
+\begin{aligned}
+\ P_x (M=m) = \binom{n+m-1}{m}(1-k_\lambda(r))^mk_\lambda(r)^n \\
+\ E_\lambda(M) = \sum_{m=0}^\infty m\binom{n+m-1}{m}(1-k_\lambda(r))^mk_\lambda(r)^n \\ 
+\ note: m\binom{n+m-1}{m} = \frac{m(n+m-1)!}{m!(n-1)!} = \frac{n(n+m-1)!}{(m-1)!n!} = n\binom{n+m-1}{n} \\ 
+\ E_\lambda(M) = \sum_{m=1}^\infty n\binom{n+m-1}{n}(1-k_\lambda(r))^mk_\lambda(r)^n \\
+&= nk_\lambda(r)^n\sum_{m=1}^\infty\binom{n+m-1}{n}(1-k_\lambda(r))^m \\
+\ let: k=m-1, n=s-1 \\
+\ nk_\lambda(r)^n \sum_{k=0}^\infty\binom{k+s-1}{s-1}(1-k_\lambda(r))^{k+1} \\
+\ nk_\lambda(r)^n(1-k_\lambda(r))\sum_{k=0}^\infty\binom{k+s-1}{s-1}(1-k_\lambda(r))^{k} \\
+\ note: \sum_{k=0}^\infty\binom{k+s-1}{s-1}(1-k_\lambda(r))^{k} = [1-(1-k_\lambda(r))]^{-s} = (k_\lambda(r))^{-s} = (k_\lambda(r))^{-n-1} \\
+\ E_\lambda(M) = nk_\lambda(r)^n(1-k_\lambda(r))(k_\lambda(r))^{-n-1} \\
+&= n(1-k_\lambda(r))(k_\lambda(r))^{-1} \\
+&= \frac{n(1-k_\lambda(r))}{k_\lambda(r)} \\
+\end{aligned}
+$$
+
+## Question 2b
+
+## Question 2c 
+```{r}
+#EM algorithm 
+converge <- function(x,lambda, eps=1e-6, max.iter = 500) {
+  n <- length(x)
+  x <- sort(x)
+  if (missing(lambda)){
+    lambda <- mean(x)
+  }
+#e-step
+    E <- n*(exp(-lambda))/(1-exp(-lambda))
+#m-step
+    for (i in 1:max.iter) {
+      lambda <- -(n*(exp(-lambda)))/(1-exp(-lambda))^2
+    }
+  r <- list(E=E, lambda=lambda)
+  r
+}
+```
+
+With the given data set, we create a matrix 
+
+```{r}
+x <- c(rep(1,1317),rep(2,239),rep(3,42),rep(4,14),rep(5,4),rep(6,4),rep(7,1))
+y1 <- rep(1,1317);y2 <- rep(2,239);y3 <- rep(3,42);y4<-rep(4,14);y5<-rep(5,4);y6<-rep(6,4);y7<-rep(7,1)
+converge(y1,1.25);converge(y2,1.25);converge(y3,1.25);converge(y4,1.25);converge(y5,1.25);converge(y6,1.25);converge(y7,1.25)
+
+```
+
